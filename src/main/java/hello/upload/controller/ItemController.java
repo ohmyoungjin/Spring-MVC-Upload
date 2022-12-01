@@ -40,9 +40,11 @@ public class ItemController {
     @PostMapping("/items/new")
     public String saveItem(@ModelAttribute ItemForm form, RedirectAttributes redirectAttributes) throws IOException {
         //MultipartFile attachFile = form.getAttachFile();
+        //사용자가 올린 file 이름
         UploadFile attachFile = fileStore.storeFile(form.getAttachFile());
 
         //List<MultipartFile> imageFiles = form.getImageFiles();
+        //서버에 저장 될 파일 이름
         List<UploadFile> storeImageFiles = fileStore.storeFiles(form.getImageFiles());
 
         //데이터베이스 저장
@@ -51,23 +53,23 @@ public class ItemController {
         item.setAttachFile(attachFile);
         item.setImageFiles(storeImageFiles);
         itemRepository.save(item);
-        //redirect 할 부분 설정
+        //데이터 베이스에 저장 후 화면 redirect
         redirectAttributes.addAttribute("itemId", item.getId());
-
         return "redirect:/items/{itemId}";
     }
 
     //상품 화면
     @GetMapping("/items/{id}")
     public String items(@PathVariable Long id, Model model) {
+        //PathVariable 해당하는 상품 페이지
         Item item = itemRepository.findById(id);
         model.addAttribute("item", item);
         return "item-view";
 
     }
 
-    //<img> 태그로 이미지를 조회할 때 사용한다. UrlResource
-    //로 이미지 파일을 읽어서 @ResponseBody 로 이미지 바이너리를 반환한다.
+    //<img> 태그로 이미지를 조회할 때 사용한다. UrlResource 이미지 파일을 읽은 후
+    //@ResponseBody 로 이미지 바이너리를 반환한다.
     @ResponseBody
     @GetMapping("/images/{filename}")
     public Resource downloadImage(@PathVariable String filename) throws MalformedURLException {
@@ -75,7 +77,7 @@ public class ItemController {
         return new UrlResource("file:" + fileStore.getFullPath(filename));
     }
 
-    //파일을 다운로드 할 때 실행한다. 예제를 더 단순화 할 수 있지만,
+    //파일을 다운로드 할 때 실행한다.
     //파일 다운로드 시 권한 체크같은 복잡한 상황까지 가정한다 생각하고 이미지 id 를 요청하도록 했다. 파일
     //다운로드시에는 고객이 업로드한 파일 이름으로 다운로드 하는게 좋다. 이때는 Content-Disposition
     //해더에 attachment; filename="업로드 파일명" 값을 주면 된다
